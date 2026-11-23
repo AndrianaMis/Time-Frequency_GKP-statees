@@ -1,0 +1,38 @@
+#σ0 << Ω <<κ 
+#Ω=2π, Τ=π/Ω
+#σt0=1/κ
+#Τenv = sqrt{2}/σ0
+#πλατος στην συχνοτητα μετα το stage 1 = σ_eff <σ0 -> 1/σ_eff^2 = 1/σ0^2 + 1/σa^2
+#n=κ/Ω , Tenv / T
+clean_state:
+  sigma_0: 0.4 
+  kappa: 20.0
+
+optical_channel_noise:
+  mu: 1.8
+  tau: 0.15
+  sigma_w_noise: 0.5
+  sigma_t_noise: 0.11
+  #dephasing_factor: 2.4
+
+ancilla_parameters:
+  sigma_a_w: 0.25
+  sigma_a_t: 0.1
+plotting:
+  #n_teeth: 50
+
+  w_range_factor: 3.1
+  t_range_factor: 10.1
+  wigner_factor: 5.1
+  resolution_1d: 1500
+  wigner_resolution: 200
+
+animation:
+  # Frames per second for output GIF
+  fps: 15
+
+  # Dots per inch (resolution vs file size: 90 is ~20 MB, 75 is ~12 MB)
+  dpi: 90
+
+  # Total frames for one complete QEC loop
+  total_frames: 140

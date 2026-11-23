@@ -1,0 +1,37 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# OS files
+.DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.bbl
+*.blg
+*.toc
+*.fls
+*.fdb_latexmk
+
+# Lock and version files
+uv.lock
+.python-version
+pyproject.toml
+
+# Ignore all markdown notes except README.md
+*.md
+!README.md
+
+# (Optional) External papers and reference PDFs (saves ~62 MB)
+papers/
+*.pdf
