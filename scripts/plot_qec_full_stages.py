@@ -21,7 +21,7 @@ def generate_full_qec_stages_figure(config_file="qec_params.yaml",
     sigma_0 = clean_cfg.get("sigma_0", 0.22)
     kappa = clean_cfg.get("kappa", 14.0)
     sigma_t0 = clean_cfg.get("sigma_t0") or (1.0 / kappa)
-    T_env0 = clean_cfg.get("T_env0") or (np.sqrt(2.0) / sigma_0)
+    T_env0 = (1.0 / sigma_0)
 
     noise_cfg = cfg.get("optical_channel_noise", {})
     mu = noise_cfg.get("mu", 0.38 * Omega)

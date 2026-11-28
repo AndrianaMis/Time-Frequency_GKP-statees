@@ -58,12 +58,12 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
     kappa = clean_cfg.get("kappa", 14.0)
     sigma_t0 = (1.0 / kappa)
     print("σt: ", sigma_t0)
-    T_env0 = (np.sqrt(2.0) / sigma_0)
+    T_env0 = (1.0 / sigma_0)
     print("T_env: ", T_env0)
 
 
     n_freq = int(np.ceil(2.2 * kappa / Omega))
-    n_time = int(np.ceil(1.8 * T_env0 / T)) 
+    n_time = int(np.ceil(2.5 * T_env0 / T)) 
     n_teeth = max(n_freq, n_time) 
     print("teeth: ", n_teeth)
 
@@ -93,7 +93,7 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
     #ancilla addition with clean state
     # Post-Round 1 (Frequency corrected & narrowed) since freq width narrowd, time envelope wider. 
     sigma_f_r1 = np.sqrt((sigma_0**2 * sigma_a_f**2) / (sigma_0**2 + sigma_a_f**2))  # below equation 67 in overleaf
-    T_env_r1 = np.sqrt(2.0) / sigma_f_r1 # >T_env0
+    T_env_r1 = 1.0 / sigma_f_r1 # >T_env0
     print("T_env_r1: ", T_env_r1)
 
 
@@ -105,23 +105,22 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
 
     # Plotting configuration
     plot_cfg = cfg.get("plotting", {})
-    #n_teeth = plot_cfg.get("n_teeth", 6)
-    # w_factor = plot_cfg.get("w_range_factor", 3.1)
-    # t_factor = plot_cfg.get("t_range_factor", 3.1)
-    w_factor = 2.2 * (kappa / Omega)   
-    t_factor = 1.6 * (T_env0 / T) 
+    w_factor = plot_cfg.get("w_range_factor", 2.2 * (kappa / Omega))   
+    t_factor = plot_cfg.get("t_range_factor", 1.6 * (T_env0 / T)) 
 
-
-    wigner_factor=plot_cfg.get("wigner_factor", 5)
+    # Wigner grid: allow wider range on x-axis (arrival time t/T) so combs decay smoothly
+    wigner_factor_t = plot_cfg.get("wigner_factor_t", plot_cfg.get("wigner_factor", 6.5))
+    print(f'wigner t: {wigner_factor_t}')
+    wigner_factor_w = plot_cfg.get("wigner_factor_w", plot_cfg.get("w_range_factor", 4.5))
     res_1d = plot_cfg.get("resolution_1d", 2000)
 
     w_pts = np.linspace(-w_factor * Omega, w_factor * Omega, res_1d)
     t_pts = np.linspace(-t_factor * T, t_factor * T, res_1d)
 
-    #wigner 
+    # Wigner meshgrid
     res_wign = plot_cfg.get("wigner_resolution", 220)
-    t_wign = np.linspace(-wigner_factor * T, wigner_factor * T, res_wign)
-    w_wign = np.linspace(-wigner_factor * Omega, wigner_factor * Omega, res_wign)   
+    t_wign = np.linspace(-wigner_factor_t * T, wigner_factor_t * T, res_wign)
+    w_wign = np.linspace(-wigner_factor_w * Omega, wigner_factor_w * Omega, res_wign)   
     T_mesh, W_mesh = np.meshgrid(t_wign, w_wign)
 
 
@@ -249,8 +248,21 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
     else:
         cols=2
     
-    fig, axes = plt.subplots(4, cols, figsize=(19, 16), dpi=300)
-    plt.rcParams.update({'font.size': 10, 'axes.labelsize': 11, 'axes.titlesize': 12})
+    # Publication-ready typography: LaTeX Computer Modern serif, no bold, matching body/caption font size
+    plt.rcParams.update({
+        "font.family": "serif",
+        "font.serif": ["Computer Modern Roman", "Times New Roman", "DejaVu Serif"],
+        "mathtext.fontset": "cm",
+        "font.size": 9.5,
+        "axes.labelsize": 9.5,
+        "axes.titlesize": 10.0,
+        "xtick.labelsize": 8.5,
+        "ytick.labelsize": 8.5,
+        "legend.fontsize": 8.0,
+        "lines.linewidth": 1.4,
+    })
+
+    fig, axes = plt.subplots(4, cols, figsize=(10.5, 9.5), dpi=300)
 
     for idx, (st, row_axes) in enumerate(zip(stages, axes)):
        # print(f"Stage {idx}: ")
@@ -267,29 +279,29 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
 
 
         # Plot Frequency
-        ax_f.plot(w_pts / Omega, I_w, color=st["color"], lw=2.0, label=r'Comb Teeth')
-        ax_f.plot(w_pts / Omega, env_f, color='darkorange', ls=':', lw=1.6, label=r'Envelope $\kappa$')
+        ax_f.plot(w_pts / Omega, I_w, color=st["color"], lw=1.6, label=r'Comb teeth')
+        ax_f.plot(w_pts / Omega, env_f, color='darkorange', ls=':', lw=1.4, label=r'Envelope $\kappa$')
         ax_f.axvline(0, color='gray', ls='--', alpha=0.4)
         for n in range(-3, 4):
             ax_f.axvline(n, color='lightgray', ls=':', alpha=0.3)
         ax_f.set_xlim(-w_factor, w_factor)
         ax_f.set_ylim(-0.05, 1.15)
-        ax_f.set_ylabel(r'Intensity $|\tilde{\psi}(\omega)|^2$', fontweight='bold')
-        ax_f.set_title(f"{st['name']} - Frequency Domain\n({st['desc']})", fontweight='bold', pad=6)
+        ax_f.set_ylabel(r'Intensity $|\tilde{\psi}(\omega)|^2$')
+        ax_f.set_title(f"{st['name']} – Frequency", pad=5)
         ax_f.grid(True, alpha=0.25)
         if idx == 0:
             ax_f.legend(loc='upper right', framealpha=0.9)
 
         # Plot Time
-        ax_t.plot(t_pts / T, I_t, color=st["color"], lw=2.0, label=r'Pulse Train')
-        ax_t.plot(t_pts / T, env_t, color='darkorange', ls=':', lw=1.6, label=r'Envelope $T_{\mathrm{env}}$')
+        ax_t.plot(t_pts / T, I_t, color=st["color"], lw=1.6, label=r'Pulse train')
+        ax_t.plot(t_pts / T, env_t, color='darkorange', ls=':', lw=1.4, label=r'Envelope $T_{\mathrm{env}}$')
         ax_t.axvline(0, color='gray', ls='--', alpha=0.4)
         for k in range(-3, 4):
             ax_t.axvline(k, color='lightgray', ls=':', alpha=0.3)
         ax_t.set_xlim(-t_factor, t_factor)
         ax_t.set_ylim(-0.05, 1.15)
-        ax_t.set_ylabel(r'Intensity $|\psi(t)|^2$', fontweight='bold')
-        ax_t.set_title(f"{st['name']} - Time Domain", fontweight='bold', pad=6)
+        ax_t.set_ylabel(r'Intensity $|\psi(t)|^2$')
+        ax_t.set_title(f"{st['name']} – Time", pad=5)
         ax_t.grid(True, alpha=0.25)
         if idx == 0:
             ax_t.legend(loc='upper right', framealpha=0.9)
@@ -311,7 +323,7 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
                 T_env=st["T_env"],
                 kappa=st["kappa"],
                 Omega=Omega,
-                n_teeth=4
+                n_teeth=6
             )
             vmax = np.max(np.abs(W))
             norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
@@ -325,18 +337,18 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
 
             if st["tau"] != 0.0 or st["mu"] != 0.0:
                 ax_w.scatter([st["tau"] / T], [st["mu"] / Omega], color='gold',
-                            edgecolor='black', s=80, zorder=6, label=r'Shift $(\tau, \mu)$')
+                            edgecolor='black', s=28, zorder=6, label=r'Shift $(\tau, \mu)$')
                 ax_w.annotate('', xy=(st["tau"]/T, st["mu"]/Omega), xytext=(0, 0),
-                            arrowprops=dict(arrowstyle="->", color="black", lw=1.8))
-                ax_w.legend(loc='upper right', framealpha=0.9, fontsize=8.5)
+                            arrowprops=dict(arrowstyle="->", color="black", lw=1.3))
+                ax_w.legend(loc='upper right', framealpha=0.9, fontsize=8.0)
 
-            ax_w.set_xlim(-wigner_factor, wigner_factor)
-            ax_w.set_ylim(-wigner_factor, wigner_factor)
-            ax_w.set_xlabel(r'Arrival Time $t / T$', fontweight='bold')
-            ax_w.set_ylabel(r'Detuning $\omega / \Omega$', fontweight='bold')
-            ax_w.set_title(rf"{st['name']} Wigner Function $W(t, \omega)$", fontweight='bold', pad=6)
+            ax_w.set_xlim(-wigner_factor_t, wigner_factor_t)
+            ax_w.set_ylim(-wigner_factor_w, wigner_factor_w)
+            ax_w.set_xlabel(r'Arrival time $t / T$')
+            ax_w.set_ylabel(r'Detuning $\omega / \Omega$')
+            ax_w.set_title(rf"{st['name']} – Wigner $W(t, \omega)$", pad=5)
             cb = fig.colorbar(cf, ax=ax_w, fraction=0.046, pad=0.04)
-            cb.set_label(r'$W(t, \omega)$', fontweight='bold', fontsize=9)
+            cb.set_label(r'$W(t, \omega)$', fontsize=8.5)
        # else:
            # print("We are not plotting the wigner rn")
            
@@ -345,8 +357,8 @@ def generate_qec_stages_plot(save_path="qec_stages_process.png", config_file="qe
 
 
         if idx == 3:
-            ax_f.set_xlabel(r'Detuning Frequency $\omega / \Omega$', fontweight='bold')
-            ax_t.set_xlabel(r'Arrival Time $t / T$', fontweight='bold')
+            ax_f.set_xlabel(r'Frequency detuning $\omega / \Omega$')
+            ax_t.set_xlabel(r'Arrival time $t / T$')
 
     if os.path.dirname(save_path):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)

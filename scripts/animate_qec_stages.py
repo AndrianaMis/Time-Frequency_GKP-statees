@@ -18,7 +18,7 @@ def create_stages_animation(config_file="qec_params.yaml", output_gif="qec_stage
     sigma_0 = clean_cfg.get("sigma_0", 0.22)
     kappa = clean_cfg.get("kappa", 14.0)
     sigma_t0 = 1.0 / kappa
-    T_env0 = np.sqrt(2.0) / sigma_0
+    T_env0 = (1.0 / sigma_0)
 
     # Noise parameters
     noise_cfg = cfg.get("optical_channel_noise", {})

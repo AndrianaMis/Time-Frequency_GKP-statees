@@ -22,7 +22,7 @@ wheels/
 *.toc
 *.fls
 *.fdb_latexmk
-
+*.tex
 # Lock and version files
 uv.lock
 .python-version

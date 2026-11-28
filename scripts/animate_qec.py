@@ -27,7 +27,7 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
     sigma_0 = clean_cfg.get("sigma_0", 0.22)
     kappa = clean_cfg.get("kappa", 14.0)
     sigma_t0 =  (1.0 / kappa)
-    T_env0 = (np.sqrt(2.0) / sigma_0)
+    T_env0 = (1.0 / sigma_0)
 
     noise_cfg = cfg.get("optical_channel_noise", {})
     mu_noise = noise_cfg.get("mu", 0.38 * Omega)
@@ -47,7 +47,7 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
     # Final re-narrowed widths after Round 1 & Round 2
     sigma_w_final = np.sqrt((sigma_0**2 * sigma_a_w**2) / (sigma_0**2 + sigma_a_w**2))
     sigma_t_final = np.sqrt((sigma_t0**2 * sigma_a_t**2) / (sigma_t0**2 + sigma_a_t**2))
-    T_env_final = np.sqrt(2.0) / sigma_w_final
+    T_env_final = 1.0 / sigma_w_final
 
     anim_cfg = cfg.get("animation", {})
     fps = anim_cfg.get("fps", 15)
@@ -56,19 +56,20 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
 
     plot_cfg = cfg.get("plotting", {})
     n_freq = int(np.ceil(2.2 * kappa / Omega))
-    n_time = int(np.ceil(1.8 * T_env0 / T)) 
+    n_time = int(np.ceil(2.5 * T_env0 / T)) 
     n_teeth = max(n_freq, n_time) 
     print("teeth: ", n_teeth)
-    w_factor = 2.2 * (kappa / Omega)
-    t_factor = 1.6 * (T_env0 / T)
+    w_factor = plot_cfg.get("w_range_factor", 2.2 * (kappa / Omega))
+    t_factor = plot_cfg.get("t_range_factor", 1.6 * (T_env0 / T))
 
     w_pts = np.linspace(-w_factor * Omega, w_factor * Omega, 800)
     t_pts = np.linspace(-t_factor * T, t_factor * T, 800)
 
     res_wign = plot_cfg.get("wigner_resolution", 220)
-    wigner_factor=plot_cfg.get("wigner_factor", 5)
-    t_wign = np.linspace(-wigner_factor * T, wigner_factor * T, res_wign)
-    w_wign = np.linspace(-wigner_factor * Omega, wigner_factor * Omega, res_wign) 
+    wigner_factor_t = plot_cfg.get("wigner_factor_t", plot_cfg.get("wigner_factor", 6.5))
+    wigner_factor_w = plot_cfg.get("wigner_factor_w", plot_cfg.get("w_range_factor", 4.5))
+    t_wign = np.linspace(-wigner_factor_t * T, wigner_factor_t * T, res_wign)
+    w_wign = np.linspace(-wigner_factor_w * Omega, wigner_factor_w * Omega, res_wign) 
     T_mesh, W_mesh = np.meshgrid(t_wign, w_wign)
 
     def get_frame_state(frame):
@@ -161,6 +162,19 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
             "color": active_color
         }
 
+    # Publication-ready typography: LaTeX Computer Modern serif, normal weight
+    plt.rcParams.update({
+        "font.family": "serif",
+        "font.serif": ["Computer Modern Roman", "Times New Roman", "DejaVu Serif"],
+        "mathtext.fontset": "cm",
+        "font.size": 10.0,
+        "axes.labelsize": 10.5,
+        "axes.titlesize": 11.0,
+        "xtick.labelsize": 9.5,
+        "ytick.labelsize": 9.5,
+        "legend.fontsize": 9.0,
+    })
+
     fig = plt.figure(figsize=(15, 5.2), dpi=dpi)
     gs = fig.add_gridspec(1, 3, width_ratios=[1.1, 1.1, 1.2], wspace=0.28)
 
@@ -243,8 +257,8 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
         ax_f.axvline(n, color='lightgray', ls=':', alpha=0.3)
     ax_f.set_xlim(-w_factor, w_factor)
     ax_f.set_ylim(-0.05, 1.15)
-    ax_f.set_xlabel(r'Detuning Frequency $\omega / \Omega$', fontweight='bold', fontsize=11)
-    ax_f.set_ylabel(r'Intensity $|\tilde{\psi}(\omega)|^2$', fontweight='bold', fontsize=11)
+    ax_f.set_xlabel(r'Detuning frequency $\omega / \Omega$', fontsize=10.5)
+    ax_f.set_ylabel(r'Intensity $|\tilde{\psi}(\omega)|^2$', fontsize=10.5)
     ax_f.grid(True, alpha=0.25)
     ax_f.legend(loc='upper right', framealpha=0.9, fontsize=9)
 
@@ -255,15 +269,15 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
         ax_t.axvline(k, color='lightgray', ls=':', alpha=0.3)
     ax_t.set_xlim(-t_factor, t_factor)
     ax_t.set_ylim(-0.05, 1.15)
-    ax_t.set_xlabel(r'Arrival Time $t / T$', fontweight='bold', fontsize=11)
-    ax_t.set_ylabel(r'Intensity $|\psi(t)|^2$', fontweight='bold', fontsize=11)
+    ax_t.set_xlabel(r'Arrival time $t / T$', fontsize=10.5)
+    ax_t.set_ylabel(r'Intensity $|\psi(t)|^2$', fontsize=10.5)
     ax_t.grid(True, alpha=0.25)
     ax_t.legend(loc='upper right', framealpha=0.9, fontsize=9)
 
     #W_init = compute_wigner(0, 0, 1.0, T_env0)
     W_init=compute_exact_wigner(T_mesh, W_mesh,0,0,sigma_0, sigma_t0, T_env0, kappa, Omega ,n_teeth)
     vmax0 = np.max(np.abs(W_init))
-    extent = [-wigner_factor, wigner_factor, -wigner_factor, wigner_factor]
+    extent = [-wigner_factor_t, wigner_factor_t, -wigner_factor_w, wigner_factor_w]
     im_wign = ax_w.imshow(W_init, extent=extent, origin='lower', cmap='RdBu_r', 
                           vmin=-vmax0, vmax=vmax0, interpolation='bilinear', aspect='auto')
 
@@ -272,23 +286,23 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
     for k in [-1, 1]:
         ax_w.axvline(k, color='gray', ls=':', lw=0.8, alpha=0.4)
         ax_w.axhline(k, color='gray', ls=':', lw=0.8, alpha=0.4)
-    ax_w.set_xlim(-wigner_factor, wigner_factor)
-    ax_w.set_ylim(-wigner_factor, wigner_factor)
-    ax_w.set_xlabel(r'Arrival Time $t / T$', fontweight='bold', fontsize=11)
-    ax_w.set_ylabel(r'Detuning Frequency $\omega / \Omega$', fontweight='bold', fontsize=11)
+    ax_w.set_xlim(-wigner_factor_t, wigner_factor_t)
+    ax_w.set_ylim(-wigner_factor_w, wigner_factor_w)
+    ax_w.set_xlabel(r'Arrival time $t / T$', fontsize=10.5)
+    ax_w.set_ylabel(r'Detuning frequency $\omega / \Omega$', fontsize=10.5)
 
     cbar = fig.colorbar(im_wign, ax=ax_w, fraction=0.046, pad=0.04)
-    cbar.set_label(r'$W(t, \omega)$', fontweight='bold', fontsize=10)
+    cbar.set_label(r'$W(t, \omega)$', fontsize=9.5)
 
-    shift_scatter = ax_w.scatter([0], [0], color='gold', edgecolor='black', s=80, zorder=6)
+    shift_scatter = ax_w.scatter([0], [0], color='gold', edgecolor='black', s=32, zorder=6)
 
-    title_text = fig.suptitle("", fontsize=13, fontweight='bold', y=0.99)
-    sub_text = fig.text(0.5, 0.93, "", ha='center', fontsize=10.5, fontstyle='italic', color='#333333')
+    title_text = fig.suptitle("", fontsize=12, y=0.99)
+    sub_text = fig.text(0.5, 0.93, "", ha='center', fontsize=10.0, fontstyle='italic', color='#333333')
 
     metrics_box = dict(boxstyle='round,pad=0.35', facecolor='#f8f9fa', edgecolor='#cccccc', alpha=0.9)
-    badge_f = ax_f.text(0.04, 0.78, "", transform=ax_f.transAxes, fontsize=9.5, bbox=metrics_box)
-    badge_t = ax_t.text(0.04, 0.78, "", transform=ax_t.transAxes, fontsize=9.5, bbox=metrics_box)
-    badge_w = ax_w.text(0.04, 0.78, "", transform=ax_w.transAxes, fontsize=9.5, bbox=metrics_box)
+    badge_f = ax_f.text(0.04, 0.78, "", transform=ax_f.transAxes, fontsize=9.0, bbox=metrics_box)
+    badge_t = ax_t.text(0.04, 0.78, "", transform=ax_t.transAxes, fontsize=9.0, bbox=metrics_box)
+    badge_w = ax_w.text(0.04, 0.78, "", transform=ax_w.transAxes, fontsize=9.0, bbox=metrics_box)
 
     def update(frame):
         st = get_frame_state(frame)
@@ -304,7 +318,7 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
         line_w.set_color(st["color"])
         env_f = np.exp(-(w_pts**2) / (kappa**2))
         line_env_w.set_data(w_pts / Omega, env_f)
-        ax_f.set_title(r"Frequency Spectrum $|\tilde{\psi}(\omega)|^2$", fontweight='bold', fontsize=11)
+        ax_f.set_title(r"Frequency Spectrum $|\tilde{\psi}(\omega)|^2$", fontsize=10.5)
         badge_f.set_text(r"$\mu / \Omega$: " f"{st['mu']/Omega:+.2f}\n" r"$\sigma_\omega$: " f"{st['sig_w']:.3f}")
 
         I_t = np.zeros_like(t_pts)
@@ -318,7 +332,7 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
         line_t.set_color(st["color"])
         env_t = np.exp(-(t_pts**2) / (st["T_env"]**2))
         line_env_t.set_data(t_pts / T, env_t)
-        ax_t.set_title(r"Time Pulse Train $|\psi(t)|^2$", fontweight='bold', fontsize=11)
+        ax_t.set_title(r"Time Pulse Train $|\psi(t)|^2$", fontsize=10.5)
         badge_t.set_text(r"$\tau / T$: " f"{st['tau']/T:+.2f}\n" r"$\sigma_t$: " f"{st['sig_t']:.3f}")
 
      #   W = compute_wigner(st["tau"], st["mu"], st["broadening"], st["T_env"])
@@ -329,7 +343,7 @@ def create_qec_animation(config_file="qec_params.yaml", output_gif="figures/qec_
 
         shift_scatter.set_offsets([[st["tau"] / T, st["mu"] / Omega]])
 
-        ax_w.set_title(r"Wigner Function $W(t, \omega)$", fontweight='bold', fontsize=11)
+        ax_w.set_title(r"Wigner Function $W(t, \omega)$", fontsize=10.5)
        # badge_w.set_text(f"Noise: {st['broadening']:.1f}x")
 
         title_text.set_text(st["stage_name"])
